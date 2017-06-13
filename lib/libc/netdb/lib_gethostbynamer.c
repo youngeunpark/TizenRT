@@ -465,12 +465,12 @@ static int lib_dns_query(FAR const char *hostname, FAR struct sockaddr *addr, so
  ****************************************************************************/
 
 #ifdef CONFIG_NETDB_DNSCLIENT
-static int lib_dns_lookup(FAR const char *name, FAR struct hostent *host, FAR char *buf, size_t buflen)
+struct hostent_info_s *info;
+int lib_dns_lookup(FAR const char *name, FAR struct hostent *host, FAR char *buf, size_t buflen)
 {
-	FAR struct hostent_info_s *info;
-	FAR char *ptr;
-	FAR void *addrdata;
-	socklen_t addrlen;
+	FAR char *ptr = NULL;
+	FAR void *addrdata = NULL;
+	socklen_t addrlen = 0;
 	int addrtype;
 	int namelen;
 	int ret;
@@ -543,7 +543,7 @@ static int lib_dns_lookup(FAR const char *name, FAR struct hostent *host, FAR ch
 			return -ERANGE;
 		}
 
-		strncpy(ptr, name, buflen);
+		//strncpy(ptr, name, buflen);
 		return OK;
 	}
 
