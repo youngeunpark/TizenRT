@@ -142,7 +142,7 @@
  * Public Types
  ********************************************************************************/
 
-typedef uint32_t time_t;		/* Holds time in seconds */
+typedef long  time_t;		/* Holds time in seconds */
 typedef uint8_t clockid_t;		/* Identifies one time base source */
 typedef FAR void *timer_t;		/* Represents one POSIX timer */
 
