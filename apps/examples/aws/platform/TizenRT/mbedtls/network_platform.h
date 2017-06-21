@@ -15,8 +15,9 @@
 
 #ifndef IOTSDKC_NETWORK_MBEDTLS_PLATFORM_H_H
 
-#include "tls/config.h"
+//#ifdef TIZENRT
 
+#include "tls/config.h"
 #include "tls/platform.h"
 #include "tls/net.h"
 #include "tls/ssl.h"

@@ -63,8 +63,6 @@
 /****************************************************************************
  * Definitions
  ****************************************************************************/
-#define EXAMPLES_AWS_STACKSIZE  (32768)
-
 struct pthread_arg
 {
     int argc;
@@ -153,7 +151,7 @@ int aws_sample_main(int argc, char **argv)
         printf("%s: pthread_attr_init failed, status=%d\n", __func__, ret);
 
     /* set a stacksize */
-    if ((ret = pthread_attr_setstacksize(&attr, EXAMPLES_AWS_STACKSIZE)) != 0)
+    if ((ret = pthread_attr_setstacksize(&attr, CONFIG_EXAMPLES_AWS_STACKSIZE)) != 0)
         printf("%s: pthread_attr_setstacksize failed, status=%d\n", __func__, ret);
 
     /* create pthread with entry function */
