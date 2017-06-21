@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- * Copyright 2016 Samsung Electronics All Rights Reserved.
+ * Copyright 2017 Samsung Electronics All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
  *
  ****************************************************************************/
 /****************************************************************************
- * examples/hello_tash/hello_tash_main.c
+ * examples/iotbus_test/iotbus_test_main.c
  *
  *   Copyright (C) 2008, 2011-2012 Gregory Nutt. All rights reserved.
  *   Author: Gregory Nutt <gnutt@nuttx.org>
@@ -56,94 +56,96 @@
 
 #include <tinyara/config.h>
 #include <stdio.h>
-#include <unistd.h>
-#include <apps/shell/tash.h>
+
+#include <tinyara/gpio.h>
+#include <iotbus/iotbus_gpio.h>
+#include <iotbus/iotbus_error.h>
 
 /****************************************************************************
- * Definitions
+ * iotbus_main
  ****************************************************************************/
-#define HELLO_TASH_PRI      100
-#define HELLO_TASH_STAKSIZE 1024
+iotbus_gpio_context_h r_led;
+iotbus_gpio_context_h b_led;
+iotbus_gpio_context_h left_btn;
+iotbus_gpio_context_h right_btn;
 
-/****************************************************************************
- * Private Data & Functions
- ****************************************************************************/
-/* example */
-static void *hello_example(void *arg)
+static void gpio_event_callback(void *user_data)
 {
-	(void)arg;
-	printf("This is an example to add it in tash\n");
-	printf("Hello, World!!\n");
-	return NULL;
+	iotbus_gpio_context_h hnd = (iotbus_gpio_context_h)user_data;
+
+	if (hnd == left_btn) {
+		int left_btn_read = iotbus_gpio_read(left_btn);
+
+		if (left_btn_read == 0) {
+			iotbus_gpio_write(r_led, 1);
+		} else if (left_btn_read == 1) {
+			iotbus_gpio_write(r_led, 0);
+		}
+	} else if (hnd == right_btn) {
+		int right_btn_read = iotbus_gpio_read(right_btn);
+
+		if (right_btn_read == 0) {
+			iotbus_gpio_write(b_led, 1);
+		} else if (right_btn_read == 1) {
+			iotbus_gpio_write(b_led, 0);
+		}
+	}
+	return;
 }
 
-/*  Call-back function registered in TASH.
- *   This creates pthread to run an example with ASYNC TASH excution type.
- *   Only three points can be modified
- *   1. priority
- *   2. stacksize
- *   3. register entry function of pthread (example)
- */
-static int hello_tash_cb(int argc, char **args)
-{
-	pthread_t hello_tash;
-	pthread_attr_t attr;
-	struct sched_param sparam;
-	int status;
-#ifdef SDCC
-	pthread_addr_t result;
-#endif
-
-	/* Initialize the attribute variable */
-	status = pthread_attr_init(&attr);
-	if (status != 0) {
-		printf("hello_tash : pthread_attr_init failed, status=%d\n", status);
-	}
-
-	/* 1. set a priority */
-	sparam.sched_priority = HELLO_TASH_PRI;
-	status = pthread_attr_setschedparam(&attr, &sparam);
-	if (status != OK) {
-		printf("hello_tash : pthread_attr_setschedparam failed, status=%d\n", status);
-	}
-
-	/* 2. set a stacksize */
-	status = pthread_attr_setstacksize(&attr, HELLO_TASH_STAKSIZE);
-	if (status != OK) {
-		printf("hello_tash : pthread_attr_setstacksize failed, status=%d\n", status);
-	}
-
-	/* 3. create pthread with entry function */
-	status = pthread_create(&hello_tash, &attr, hello_example, (void *)args);
-	if (status != 0) {
-		printf("hello_tash: pthread_create failed, status=%d\n", status);
-	}
-
-	/* Wait for the threads to stop */
-#ifdef SDCC
-	pthread_join(hello_tash, &result);
-#else
-	pthread_join(hello_tash, NULL);
-#endif
-
-	printf("hello_tash is finished\n");
-	return 0;
-}
-
-/****************************************************************************
- * Public Functions
- ****************************************************************************/
-
-/****************************************************************************
- * hello_tash_main
- ****************************************************************************/
 #ifdef CONFIG_BUILD_KERNEL
 int main(int argc, FAR char *argv[])
 #else
-int hello_tash_main(int argc, char **args)
+int iotbus_test_main(int argc, char *argv[])
 #endif
 {
-	tash_cmd_install("hello_tash", hello_tash_cb, TASH_EXECMD_ASYNC);
+	int ret;
+
+	printf("IOTBUS EXAMPLE!\n");
+
+	iotapi_initialize();
+
+	r_led = iotbus_gpio_open(45);
+	iotbus_gpio_set_direction(r_led, GPIO_DIRECTION_OUT);
+	b_led = iotbus_gpio_open(49);
+	iotbus_gpio_set_direction(b_led, GPIO_DIRECTION_OUT);
+	left_btn = iotbus_gpio_open(42);
+	iotbus_gpio_set_direction(left_btn, GPIO_DIRECTION_IN);
+	right_btn = iotbus_gpio_open(44);
+	iotbus_gpio_set_direction(right_btn, GPIO_DIRECTION_IN);
+
+	printf("Press R/B Test Button!!!\n");
+
+	ret = iotbus_gpio_register_cb(left_btn, IOTBUS_GPIO_EDGE_BOTH, gpio_event_callback, (void *)left_btn);
+	if (ret != IOTBUS_ERROR_NONE) {
+		printf("Registering LeftBtn Callback Error!\n");
+
+		goto iotbus_err;
+	}
+
+	ret = iotbus_gpio_register_cb(right_btn, IOTBUS_GPIO_EDGE_BOTH, gpio_event_callback, (void *)right_btn);
+	if (ret != IOTBUS_ERROR_NONE) {
+		printf("Registering RightBtn Callback Error!\n");
+
+		goto iotbus_err;
+	}
 
 	return 0;
+
+iotbus_err:
+	ret = iotbus_gpio_unregister_cb(left_btn);
+	if (ret != IOTBUS_ERROR_NONE) {
+		printf("Unregistering LefttBtn Callback Error!\n");
+	}
+	ret = iotbus_gpio_unregister_cb(right_btn);
+	if (ret != IOTBUS_ERROR_NONE) {
+		printf("Unregistering RightBtn Callback Error!\n");
+	}
+
+	iotbus_gpio_close(r_led);
+	iotbus_gpio_close(b_led);
+	iotbus_gpio_close(left_btn);
+	iotbus_gpio_close(right_btn);
+
+	return -1;
 }

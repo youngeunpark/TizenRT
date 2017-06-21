@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright 2016 Samsung Electronics All Rights Reserved.
+# Copyright 2017 Samsung Electronics All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,11 +15,10 @@
 # language governing permissions and limitations under the License.
 #
 ###########################################################################
-
 ############################################################################
-# apps/examples/testcase/Makefile
+# apps/examples/iotbus_test/Makefile
 #
-#   Copyright (C) 2011-2014 Gregory Nutt. All rights reserved.
+#   Copyright (C) 2008, 2010-2013 Gregory Nutt. All rights reserved.
 #   Author: Gregory Nutt <gnutt@nuttx.org>
 #
 # Redistribution and use in source and binary forms, with or without
@@ -55,78 +54,80 @@
 -include $(TOPDIR)/Make.defs
 include $(APPDIR)/Make.defs
 
-# built-in application info
+# Iotbus example built-in application info
 
-APPNAME = tc
+APPNAME = iotbus_test
 THREADEXEC = TASH_EXECMD_ASYNC
 
-# testcase example
+# Iotbus example
 
 ASRCS =
 CSRCS =
+MAINSRC = iotbus_test_main.c
 
-ifeq ($(CONFIG_EXAMPLES_TESTCASE),y)
+AOBJS = $(ASRCS:.S=$(OBJEXT))
+COBJS = $(CSRCS:.c=$(OBJEXT))
+MAINOBJ = $(MAINSRC:.c=$(OBJEXT))
 
-CSRCS += tc_main.c
-DEPPATH = --dep-path .
-VPATH = .
+SRCS = $(ASRCS) $(CSRCS) $(MAINSRC)
+OBJS = $(AOBJS) $(COBJS)
 
-ifeq ($(WINTOOL),y)
-INCDIROPT = -w
+ifneq ($(CONFIG_BUILD_KERNEL),y)
+  OBJS += $(MAINOBJ)
 endif
-
-include le_tc/filesystem/Make.defs
-include le_tc/kernel/Make.defs
-include le_tc/network/Make.defs
-include le_tc/ttrace/Make.defs
-include ta_tc/systemio/utc/Make.defs
-include ta_tc/systemio/itc/Make.defs
-include ta_tc/arastorage/utc/Make.defs
-include ta_tc/arastorage/itc/Make.defs
-include ta_tc/device_management/utc/Make.defs
-include ta_tc/device_management/itc/Make.defs
-
-endif
-
-AOBJS		= $(ASRCS:.S=$(OBJEXT))
-COBJS		= $(CSRCS:.c=$(OBJEXT))
-
-SRCS		= $(ASRCS) $(CSRCS)
-OBJS		= $(AOBJS) $(COBJS)
 
 ifeq ($(CONFIG_WINDOWS_NATIVE),y)
-  BIN		= ..\..\libapps$(LIBEXT)
+  BIN = ..\..\libapps$(LIBEXT)
 else
 ifeq ($(WINTOOL),y)
-  BIN		= ..\\..\\libapps$(LIBEXT)
+  BIN = ..\\..\\libapps$(LIBEXT)
 else
-  BIN		= ../../libapps$(LIBEXT)
+  BIN = ../../libapps$(LIBEXT)
 endif
 endif
 
-# Build targets
+ifeq ($(WINTOOL),y)
+  INSTALL_DIR = "${shell cygpath -w $(BIN_DIR)}"
+else
+  INSTALL_DIR = $(BIN_DIR)
+endif
 
-all:	.built
-.PHONY: context .depend depend clean distclean
+CONFIG_EXAMPLES_IOTBUS_TEST_PROGNAME ?= iotbus$(EXEEXT)
+PROGNAME = $(CONFIG_EXAMPLES_IOTBUS_TEST_PROGNAME)
 
-ifeq ($(CONFIG_EXAMPLES_TESTCASE),y)
+ROOTDEPPATH = --dep-path .
+
+# Common build
+
+VPATH =
+
+all: .built
+.PHONY: clean depend distclean
 
 $(AOBJS): %$(OBJEXT): %.S
 	$(call ASSEMBLE, $<, $@)
 
-$(COBJS): %$(OBJEXT): %.c
+$(COBJS) $(MAINOBJ): %$(OBJEXT): %.c
 	$(call COMPILE, $<, $@)
-endif
 
 .built: $(OBJS)
-ifeq ($(CONFIG_EXAMPLES_TESTCASE),y)
 	$(call ARCHIVE, $(BIN), $(OBJS))
-	$(Q) touch .built
-endif
+	@touch .built
 
+ifeq ($(CONFIG_BUILD_KERNEL),y)
+$(BIN_DIR)$(DELIM)$(PROGNAME): $(OBJS) $(MAINOBJ)
+	@echo "LD: $(PROGNAME)"
+	$(Q) $(LD) $(LDELFFLAGS) $(LDLIBPATH) -o $(INSTALL_DIR)$(DELIM)$(PROGNAME) $(ARCHCRT0OBJ) $(MAINOBJ) $(LDLIBS)
+	$(Q) $(NM) -u  $(INSTALL_DIR)$(DELIM)$(PROGNAME)
+
+install: $(BIN_DIR)$(DELIM)$(PROGNAME)
+
+else
 install:
 
-ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_TESTCASE),yy)
+endif
+
+ifeq ($(CONFIG_BUILTIN_APPS)$(CONFIG_EXAMPLES_IOTBUS_TEST),yy)
 $(BUILTIN_REGISTRY)$(DELIM)$(APPNAME)_main.bdat: $(DEPCONFIG) Makefile
 	$(Q) $(call REGISTER,$(APPNAME),$(APPNAME)_main,$(THREADEXEC),$(PRIORITY),$(STACKSIZE))
 
@@ -138,10 +139,8 @@ context:
 endif
 
 .depend: Makefile $(SRCS)
-ifeq ($(CONFIG_EXAMPLES_TESTCASE),y)
-	$(Q) $(MKDEP) $(DEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
-	$(Q) touch $@
-endif
+	@$(MKDEP) $(ROOTDEPPATH) "$(CC)" -- $(CFLAGS) -- $(SRCS) >Make.dep
+	@touch $@
 
 depend: .depend
 
@@ -152,7 +151,6 @@ clean:
 distclean: clean
 	$(call DELFILE, Make.dep)
 	$(call DELFILE, .depend)
-
 
 -include Make.dep
 .PHONY: preconfig
