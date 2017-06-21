@@ -114,7 +114,6 @@ There are two JTAG ports, one is OpenOCD through USB port and the other is norma
 ![J3 : JTAG Selection](media/J3.png)
 
 J3 Header pin is used to select JTAG port.
-
 Pin  | OpenOCD | Normal JTAG
 ---  | ------- | --------
 1-2  | Connect | Open
@@ -122,6 +121,7 @@ Pin  | OpenOCD | Normal JTAG
 5-6  | Connect | Open
 7-8  | Connect | Open
 9-10 | Connect | Open
+     |         |
 
 ### UART source selection for CON3
 One of UART0, UART1, UART2, UART3, or UARTDBG channel could be connected to CON3 through the J2 configuration.
@@ -140,6 +140,7 @@ Pin   | UART0   | UART1   | UART2   | UART3   | UARTDBG<br>(CON3) | UARTDBG<br>(
 17-18 | Open    | Open    | Connect | OPen    | Open    | Open
 19-20 | Open    | Open    | Open    | Connect | Open    | Open
 21-22 | Open    | Open    | Open    | Connect | Open    | Open
+      |         |         |         |         |         |
 
 ### UART source selection for CON5
 UART source for CON5 could be selected through J7 configuration.
@@ -156,6 +157,7 @@ Pin   | UART0   | UART1   | UART2   | UART3
 11-12 | Open    | Open    | Connect | OPen
 13-14 | Open    | Open    | Open    | Connect
 15-16 | Open    | Open    | Open    | Connect
+      |         |         |         |
 
 ### Console Terminal
 UARTDBG channel is being used as Console and it could be connected to CON3 or CON4 with J2 and J4 pin configuration.
@@ -169,5 +171,6 @@ J2 : 1-2 | Connect         | Open
 J2 : 3-4 | Connect         | Open
 J4 : 1-2 | Open            | Connect
 J4 : 3-4 | Open            | Connect
+         |                 |
 
 
